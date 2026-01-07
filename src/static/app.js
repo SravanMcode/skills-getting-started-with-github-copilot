@@ -27,6 +27,54 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
 
+        // Add participants section
+        const participantsHeader = document.createElement("h5");
+        participantsHeader.textContent = "Participants";
+        participantsHeader.className = "participants-title";
+
+        const participantsListEl = document.createElement("ul");
+        participantsListEl.className = "participants-list";
+
+        if (Array.isArray(details.participants) && details.participants.length > 0) {
+          details.participants.forEach((p) => {
+            const li = document.createElement("li");
+            li.textContent = p;
+            
+            // Create delete button
+            const deleteBtn = document.createElement("button");
+            deleteBtn.innerHTML = "&times;";
+            deleteBtn.className = "delete-btn";
+            deleteBtn.setAttribute("aria-label", `Remove ${p} from ${name}`);
+            deleteBtn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              try {
+                const response = await fetch(
+                  `/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(p)}`,
+                  { method: "POST" }
+                );
+                if (response.ok) {
+                  fetchActivities(); // Refresh the activities list
+                } else {
+                  console.error("Failed to unregister participant");
+                }
+              } catch (error) {
+                console.error("Error unregistering participant:", error);
+              }
+            });
+            
+            li.appendChild(deleteBtn);
+            participantsListEl.appendChild(li);
+          });
+        } else {
+          const li = document.createElement("li");
+          li.textContent = "No participants yet";
+          li.className = "empty";
+          participantsListEl.appendChild(li);
+        }
+
+        activityCard.appendChild(participantsHeader);
+        activityCard.appendChild(participantsListEl);
+
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
@@ -62,6 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities(); // Refresh the activities list
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
